@@ -24,8 +24,8 @@ root.title("Deck")
 # Set dark background
 root.configure(background='#575559')
 # Set window icon to png
-root.iconbitmap('calculon.ico')
-root.geometry("80x190")
+#root.iconbitmap('calculon.ico')
+root.geometry("100x200")
 
 def move_window(event):
     root.geometry('+{0}+{1}'.format(event.x_root, event.y_root))

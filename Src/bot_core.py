@@ -63,7 +63,7 @@ class Bot:
     def click_button(self, pos):
         coords = np.array(pos) + 10
         self.click(*coords)
-        time.sleep(SLEEP_DELAY * 10)
+        time.sleep(SLEEP_DELAY * 5) #was 10
 
     # Swipe on combat grid to merge units
     def swipe(self, start, end):
@@ -113,7 +113,7 @@ class Bot:
 
     # find icon on screen
     def getXYByImage(self, target, new=True):
-        valid_targets = ['battle_icon', 'collect_pvp', 'pvp_button', 'back_button', '0watch_ad', '0gift.png', '1cont_button', 'fighting']
+        valid_targets = ['battle_icon', 'collect_pvp', 'pvp_button', 'back_button', '0watch_ad', '0gift', '1cont_button', 'fighting']
         if not target in valid_targets:
             return "INVALID TARGET"
         if new:
@@ -205,7 +205,7 @@ class Bot:
         unit_chosen = merge_df['grid_pos'].tolist()
         # Send Merge
         self.swipe(*unit_chosen)
-        time.sleep(0.2)
+        time.sleep(0.1)
         return merge_df
 
     # Merge special units ['harlequin.png','dryad.png','mime.png','scrapper.png']
@@ -222,7 +222,7 @@ class Bot:
         # Merge 'em
         unit_chosen = merge_df['grid_pos'].tolist()
         self.swipe(*unit_chosen)
-        time.sleep(0.2)
+        time.sleep(0.1)
         return merge_df
 
     def log_merge(self, merge_df):
@@ -292,7 +292,7 @@ class Bot:
             if num_demon >= 11:
                 # If board is mostly demons, chill out
                 self.logger.info(f'Board is full of demons, waiting...')
-                time.sleep(10)
+                time.sleep(5) #was 10
             if self.config.getboolean('bot', 'require_shaman'):
                 merge_series = adv_filter_keys(merge_series, units='demon_hunter.png', remove=True)
         merge_series = preserve_unit(merge_series, target='trapper.png')
@@ -316,7 +316,7 @@ class Bot:
             info = 'Merging High Priority!'
             merge_df = self.merge_unit(df_split, merge_prio)
         # Merge if board is getting full. Runs well with 1 also.
-        if df_groups['empty.png'] <= 2:
+        if df_groups['empty.png'] <= 1:
             info = 'Merging!'
             # Add criteria
             low_series = adv_filter_keys(merge_series, ranks=rank, remove=False)
@@ -388,6 +388,7 @@ class Bot:
                     self.click_button(pos + [30, 485])
                 elif floor % 3 == 2:
                     self.click_button(pos + [30, 885])
+                self.click_button((400, 1500))
                 self.click_button((500, 600))
                 for i in range(10):
                     time.sleep(2)
@@ -461,16 +462,16 @@ class Bot:
         if (avail_buttons == 'quest_done.png').any(axis=None):
             pos = get_button_pos(avail_buttons, 'quest_done.png')
             self.click_button(pos)
-            self.click(700, 625)  # collect second completed quest
-            self.click(700, 875)  # collect second completed quest was 700 400
+            self.click(700, 400)  # collect first completed quest
+            self.click(700, 675)  # collect second completed quest 
             [self.click(150, 250) for i in range(2)]  # click dailies tab twice
-            self.click(420, 440)  # collect ad chest
+            self.click(420, 465)  # collect ad chest
         elif (avail_buttons == 'ad_season.png').any(axis=None):
-            self.click(120, 1150)
+            self.click(120, 1130)
         elif (avail_buttons == 'ad_pve.png').any(axis=None):
-            self.click(525, 1215)
+            self.click(120, 1220)
         elif (avail_buttons == 'ad_pvp.png').any(axis=None):
-            self.click(120, 1215)
+            self.click(525, 1220)
         elif (avail_buttons == 'battle_icon.png').any(axis=None):
             self.refresh_shop()
         else:

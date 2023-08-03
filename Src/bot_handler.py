@@ -66,12 +66,12 @@ def start_bot_class(logger):
 
 
 # Loop for combat actions
-def combat_loop(bot, grid_df, mana_targets, user_target='demon_hunter.png'):  
-    time.sleep(0.2)
-    # Upgrade units
-    bot.mana_level(mana_targets, hero_power=True)
+def combat_loop(bot, grid_df, mana_targets, user_target='demon_hunter.png'):  #config['dps_unit'].split('.')[0]
+    time.sleep(0.1)
     # Spawn units
     bot.click(450, 1360)
+    # Upgrade units
+    bot.mana_level(mana_targets, hero_power=True)
     # Try to merge units
     grid_df, unit_series, merge_series, df_groups, info = bot.try_merge(prev_grid=grid_df, merge_target=user_target)
     return grid_df, unit_series, merge_series, df_groups, info
@@ -80,7 +80,7 @@ def combat_loop(bot, grid_df, mana_targets, user_target='demon_hunter.png'):
 # Run the bot
 def bot_loop(bot, info_event):
     #Load config selector
-    config_selector.move_window(event)
+    config_selector.move_window
     # Load user config
     config = bot.config['bot']
     user_pve = config.getboolean('pve', True)
@@ -145,7 +145,7 @@ def bot_loop(bot, info_event):
             bot.logger.info(f'{output[1]}, wait count: {wait}')
             output = bot.battle_screen(start=True, pve=user_pve, floor=user_floor)
             wait += 1
-            if wait > 15:
+            if wait > 10:
                 bot.logger.warning('RESTARTING')
                 bot.restart_RR(),
                 wait = 0

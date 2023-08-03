@@ -4,10 +4,7 @@ Updated and reworked by Jimm1432
 
 *Change Log*
 1.18
-Tidied the Deck selection.
-Minor tweeks.
-Crushed most PNGs.
-Added some icons for planned work.
+Added max talent units for better identifaction of units.
 1.17
 Added multiple Configs and a selector at start-up.
 Some work on ADs but unfinished, I will come back to it soon.
