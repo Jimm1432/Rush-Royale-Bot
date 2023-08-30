@@ -70,6 +70,9 @@ def combat_loop(bot, grid_df, mana_targets, user_target='demon_hunter.png'):  #c
     time.sleep(0.1)
     # Spawn units
     bot.click(450, 1360)
+    bot.click(450, 1360)
+    bot.click(450, 1360)
+    bot.click(450, 1360)
     # Upgrade units
     bot.mana_level(mana_targets, hero_power=True)
     # Try to merge units
@@ -108,7 +111,7 @@ def bot_loop(bot, info_event):
     bot.logger.debug(f'Bot mainloop started')
     # Wait for game to load
     while (not bot.bot_stop):
-        # Fetch screen and check state
+        bot.store_visited = False  # Reset the store_visited attribute
         output = bot.battle_screen(start=False)
         if output[1] == 'fighting':
             watch_ad = True
@@ -138,7 +141,7 @@ def bot_loop(bot, info_event):
             if combat == 25 and 5 < grid_df['Age'].mean() < 50 and train_ai:
                 bot_perception.add_grid_to_dataset()
         elif output[1] == 'home' and watch_ad:
-            [bot.watch_ads() for i in range(3)]
+            [bot.watch_ads() for i in range(5)]
             watch_ad = False
         else:
             combat = 0

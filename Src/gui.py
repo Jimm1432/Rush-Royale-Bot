@@ -76,14 +76,13 @@ class RR_bot:
     # Update config file
     def update_config(self):
         # Update config file
+        self.config.read('config.ini')
         floor_var = int(self.floor.get())
         card_level = [var.get() for var in self.mana_vars] * np.arange(1, 6)
         card_level = card_level[card_level != 0]
-        self.config.read('config.ini')
         self.config['bot']['floor'] = str(floor_var)
         self.config['bot']['mana_level'] = np.array2string(card_level, separator=',')[1:-1]
         self.config['bot']['pve'] = str(bool(self.pve_var.get()))
-        self.config['bot']['watch_ad'] = str(bool(self.ads_var.get()))
         self.config['bot']['require_shaman'] = str(bool(self.shaman_var.get()))
         with open('config.ini', 'w') as configfile:
             self.config.write(configfile)
@@ -170,21 +169,18 @@ class RR_bot:
 def create_options(frame1, config):
     frame1.grid_rowconfigure(0, weight=1)
     frame1.grid_columnconfigure(0, weight=1)
-
+    
     # General options
     label = Label(frame1, text="Options", justify=LEFT).grid(row=0, column=0, sticky=W)
     if config.has_option('bot', 'pve'):
         user_pvp = int(config.getboolean('bot', 'pve'))
     pve_var = IntVar(value=user_pvp)
-    if config.has_option('bot', 'watch_ad'):
-        user_ads = int(config.getboolean('bot', 'watch_ad'))
-    ads_var = IntVar(value=user_ads)
+    ads_var = IntVar()
     if config.has_option('bot', 'require_shaman'):
         user_shaman = int(config.getboolean('bot', 'require_shaman'))
     shaman_var = IntVar(value=user_shaman)
     pve_check = Checkbutton(frame1, text='PvE', variable=pve_var, justify=LEFT).grid(row=0, column=1, sticky=W)
-    ad_check = Checkbutton(frame1, text='ADs', variable=ads_var, justify=LEFT).grid(row=0, column=2, sticky=W)
-    shaman_check = Checkbutton(frame1, text='Shaman', variable=shaman_var, justify=LEFT).grid(row=0, column=3, sticky=W)
+    shaman_check = Checkbutton(frame1, text='Shaman', variable=shaman_var, justify=LEFT).grid(row=0, column=2, sticky=W)
     # Mana level targets
     mana_label = Label(frame1, text="Mana Level Targets", justify=LEFT).grid(row=2, column=0, sticky=W)
     stored_values = np.fromstring(config['bot']['mana_level'], dtype=int, sep=',')
@@ -216,7 +212,7 @@ def create_combat_info(frame2):
 def create_base():
     root = Tk()
     root.title("RR bot")
-    root.geometry("900x700")
+    root.geometry("800x600")
     # Set dark background
     root.configure(background='#575559')
     # Set window icon to png
@@ -241,25 +237,7 @@ def write_to_widget(root, tbox, text):
     tbox.config(state=DISABLED)
     root.update_idletasks()
     
-  # For swaping out config files, Overwrites working config file.
-def copy_file():
-    try:
-        if var.get() == "deck1":
-            shutil.copy('./configs/deck1.ini', './config.ini')
-        elif var.get() == "deck2":
-            shutil.copy('./configs/deck2.ini', './config.ini')
-        elif var.get() == "deck3":
-            shutil.copy('./configs/deck3.ini', './config.ini')
-        elif var.get() == "deck4":
-            shutil.copy('./configs/deck4.ini', './config.ini')
-        elif var.get() == "deck5":
-            shutil.copy('./configs/deck5.ini', './config.ini')
-    except FileNotFoundError:
-        messagebox.showwarning("Warning", "Config.ini not found!")
-
-
-
-
+ 
 # Start the actual bot
 if __name__ == "__main__":
     bot_gui = RR_bot()

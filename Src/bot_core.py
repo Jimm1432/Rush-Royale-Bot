@@ -332,7 +332,7 @@ class Bot:
                 if not merge_series.empty:
                     merge_df = self.merge_unit(df_split, merge_series)
         else:
-            info = 'need more units!'
+            info = 'Need more units!'
         return grid_df, unit_series, merge_series, merge_df, info
 
     # Mana level cards
@@ -428,76 +428,102 @@ class Bot:
         self.shell(f'input keyevent {const.KEYCODE_BACK}')  #Force back
         return df, 'lost'
 
-    # Navigate and locate store refresh button from battle screen
-    def find_store_refresh(self):
+     # Refresh items in shop when available
+    def refresh_and_buy(self):
         self.click_button((100, 1500))  # Click store button
-        self.click_button((475, 1300))  # Click store button
-        [self.swipe([0, 0], [2, 0]) for i in range(5)]  # swipe to top
-        self.click(30, 150)  # stop scroll
+        time.sleep(1)  # Add a 2-second delay here
+        self.click_button((100, 1500))  # Click store button
+        self.click_button((450, 1300))  # Click store button
+        [self.swipe([0, 0], [2, 0]) for i in range(15)]  # Swipe to top
+        time.sleep(2)  # Add a 2-second delay here
+        # Perform one small downward scroll
+        self.swipe([2, 0], [0, 0])  # Smaller downward swipe
+        time.sleep(0.5)  # Add a 0.5-second delay here
+        self.click(30, 150)  # Stop scroll
+        time.sleep(1)  # Add a 0.5-second delay here
+        # Click on the six items based on provided coordinates
+        item_coords = [(156, 287), (458, 288), (753, 287), (152, 724), (444, 735), (748, 724)]
+        for coord in item_coords:
+            self.click_button(coord)  # Click on item
+            time.sleep(1)  # Add a 0.5-second delay here
+            self.click(400, 1130)  # Buy
+            time.sleep(1)  # Add a 0.5-second delay here
+            self.click(30, 150)  # Remove pop-up
+            time.sleep(1)  # Add a 0.5-second delay here
+        # Locate the refresh button
         avail_buttons = self.get_current_icons(available=True)
-        if (avail_buttons == 'refresh_button.png').any(axis=None):
-            pos = get_button_pos(avail_buttons, 'refresh_button.png')
-            return pos
+        if (avail_buttons == 'refresh.png').any(axis=None):
+            pos = get_button_pos(avail_buttons, 'refresh.png')
+            self.click_button(pos)  # Refresh
+            self.watch_ads()  
 
-    # Refresh items in shop when available
-    def refresh_shop(self):
-        self.click_button((100, 1500))  # Click store button
-        self.click_button((475, 1300))  # Click store button
-        # Scroll up and find the refresh button
-        pos = self.find_store_refresh()
-        if isinstance(pos, np.ndarray):
-            self.click_button(pos - [300, 750])  # Click first (free) item
-            self.click(400, 1165)  # buy
-            self.click(30, 150)  # remove pop-up
-            self.click_button(pos + [300, -400])  # Click last item (possible legendary)
-            self.click(400, 1165)  # buy
-            self.click(30, 150)  # remove pop-up
-            self.logger.warning('Bought store units!')
-            # Try to refresh shop (watch ad)
-            self.click_button(pos)
+        self.store_visited = True
+        self.logger.warning('Bought store units!')
+            
 
     def watch_ads(self):
         avail_buttons = self.get_current_icons(available=True)
         # Watch ad if available
-        if (avail_buttons == 'quest_done.png').any(axis=None):
+        if (avail_buttons == 'battle_icon.png').any(axis=None):
+            if not self.store_visited:
+                self.refresh_and_buy()
+        elif (avail_buttons == 'quest_done.png').any(axis=None):
             pos = get_button_pos(avail_buttons, 'quest_done.png')
             self.click_button(pos)
-            self.click(700, 400)  # collect first completed quest
-            self.click(700, 675)  # collect second completed quest 
-            [self.click(150, 250) for i in range(2)]  # click dailies tab twice
-            self.click(420, 465)  # collect ad chest
+            self.click(700, 600)  # collect first completed quest.
+            self.click(700, 400)  # collect second completed quest.
+            [self.click(150, 250) for i in range(2)]  # click dailies twice.
+            self.click(420, 420)  # collect ad chest.
         elif (avail_buttons == 'ad_season.png').any(axis=None):
-            self.click(120, 1130)
+            pos = get_button_pos(avail_buttons, 'ad_season.png')
+            self.click_button(pos)
         elif (avail_buttons == 'ad_pve.png').any(axis=None):
-            self.click(120, 1220)
+            pos = get_button_pos(avail_buttons, 'ad_pve.png')
+            self.click_button(pos)
         elif (avail_buttons == 'ad_pvp.png').any(axis=None):
-            self.click(525, 1220)
+            pos = get_button_pos(avail_buttons, 'ad_pvp.png')
+            self.click_button(pos)
+        elif (avail_buttons == '0watch_ad.png').any(axis=None):
+            pos = get_button_pos(avail_buttons, '0watch_ad.png')
+            self.click_button(pos)
         elif (avail_buttons == 'battle_icon.png').any(axis=None):
             self.refresh_shop()
         else:
             self.logger.info('Watched all ads!')
             return
-        # Check if ad was started
-        avail_buttons, status = self.battle_screen()
-        if status == 'menu' or status == 'home' or (avail_buttons == 'refresh_button.png').any(axis=None):
-            self.logger.info('FINISHED AD')
-        # Watch ad
-        else:
-            time.sleep(30)
-            # Keep watching until back in menu
-            for i in range(10):
-                avail_buttons, status = self.battle_screen()
-                if status == 'menu' or status == 'home':
-                    self.logger.info('FINISHED AD')
-                    return  # Exit function
-                time.sleep(2)
-                self.click(870, 30)  # skip forward/click X
+        # Actively check for the "home_screen" state
+        attempts = 0
+        while attempts < 18:  # Wait for 30 seconds (2-second intervals) before attempting to click the X mark
+            avail_buttons, status = self.battle_screen()
+            if status == 'menu' or status == 'home':
+                self.logger.info('FINISHED AD')
+                return
+            time.sleep(2)
+            attempts += 1
+        # Attempt to click the X mark for 10 seconds
+        attempts = 0
+        while attempts < 8:  # Attempt to click the X mark for 10 seconds (2-second intervals)
+            avail_buttons = self.get_current_icons(available=True)
+            if (avail_buttons == 'x_mark.png').any(axis=None):
+                pos = get_button_pos(avail_buttons, 'x_mark.png')
+                self.click_button(pos)
+            elif (avail_buttons == 'x_mark0.png').any(axis=None):
+                pos = get_button_pos(avail_buttons, 'x_mark0.png')
+                self.click_button(pos)
+            else:
+                self.click(870, 30)  # attempt to skip forward/click X
                 self.click(870, 100)  # click X playstore popup
-                if i > 5:
-                    self.shell(f'input keyevent {const.KEYCODE_BACK}')  #Force back
-                self.logger.info(f'AD TIME {i} {status}')
-            # Restart game if can't escape ad
-            self.restart_RR()
+            avail_buttons, status = self.battle_screen()
+            if status == 'menu' or status == 'home':
+                self.logger.info('FINISHED AD')
+                return
+            time.sleep(2)
+            attempts += 1
+        # If the bot hasn't returned to the home screen after 40 seconds:
+        self.logger.info(f'AD TIME {attempts} {status}')
+        self.shell(f'input keyevent {const.KEYCODE_BACK}')  # Force back
+        # Restart game if can't escape ad
+        self.restart_RR()
 
 
 ####
@@ -633,14 +659,6 @@ def adv_filter_keys(unit_series, units=None, ranks=None, remove=False):
     else:
         series = series[series.index.isin(filtered_ranks.index)]
     return series
-
-
-# Will spam read all knowledge in knowledge base for free gold, roughly 3k, 100 gems
-def read_knowledge(bot):
-    spam_click = range(1000)
-    for i in spam_click:
-        bot.click(450, 1300, 0.1)
-
 
 def get_button_pos(df, button):
     #button=button+'.png'
