@@ -113,7 +113,7 @@ class Bot:
 
     # find icon on screen
     def getXYByImage(self, target, new=True):
-        valid_targets = ['battle_icon', 'collect_pvp', 'pvp_button', 'back_button', '0watch_ad', '0gift', '1cont_button', 'fighting']
+        valid_targets = ['battle_icon', 'collect_pvp', 'pvp_button', 'back_button', '0watch_ad', 'quest_collect', '1cont_button', 'fighting']
         if not target in valid_targets:
             return "INVALID TARGET"
         if new:
@@ -420,7 +420,7 @@ class Bot:
                 time.sleep(1)
                 return df, 'home'
             # Check first button is clickable
-            df_click = df[df['icon'].isin(['back_button.png', 'battle_icon.png', 'collect_pvp.png' '0watch_ad.png', '0gift.png', '1cont_button.png', '1quit.png'])]
+            df_click = df[df['icon'].isin(['back_button.png', 'battle_icon.png', 'collect_pvp.png' 'watch.png', 'refresh.png', '1cont_button.png', '1quit.png'])]
             if not df_click.empty:
                 button_pos = df_click['pos [X,Y]'].tolist()[0]
                 self.click_button(button_pos)
@@ -477,14 +477,11 @@ class Bot:
         elif (avail_buttons == 'ad_season.png').any(axis=None):
             pos = get_button_pos(avail_buttons, 'ad_season.png')
             self.click_button(pos)
-        elif (avail_buttons == 'ad_pve.png').any(axis=None):
-            pos = get_button_pos(avail_buttons, 'ad_pve.png')
+        elif (avail_buttons == 'ads.png').any(axis=None):
+            pos = get_button_pos(avail_buttons, 'ads.png')
             self.click_button(pos)
-        elif (avail_buttons == 'ad_pvp.png').any(axis=None):
-            pos = get_button_pos(avail_buttons, 'ad_pvp.png')
-            self.click_button(pos)
-        elif (avail_buttons == '0watch_ad.png').any(axis=None):
-            pos = get_button_pos(avail_buttons, '0watch_ad.png')
+        elif (avail_buttons == 'watch.png').any(axis=None):
+            pos = get_button_pos(avail_buttons, 'watch.png')
             self.click_button(pos)
         elif (avail_buttons == 'battle_icon.png').any(axis=None):
             self.refresh_shop()
