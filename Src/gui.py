@@ -25,7 +25,7 @@ class RR_bot:
         self.root = create_base()
         self.frames = self.root.winfo_children()
         # Setup frame 1 (options)
-        self.ads_var, self.buy_var, self.pve_var, self.shaman_var, self.mana_vars, self.floor = create_options(self.frames[0], self.config)
+        self.ads_var, self.buy_var, self.pve_var, self.shaman_var, self.maps_var, self.mana_vars, self.floor = create_options(self.frames[0], self.config)
         # Setup frame 2 (combat info)
         self.grid_dump, self.unit_dump, self.merge_dump = create_combat_info(self.frames[1])
         ## rest need to be cleaned up
@@ -84,6 +84,7 @@ class RR_bot:
         self.config['bot']['mana_level'] = np.array2string(card_level, separator=',')[1:-1]
         self.config['bot']['pve'] = str(bool(self.pve_var.get()))
         self.config['bot']['buy'] = str(bool(self.buy_var.get()))
+        self.config['bot']['use_maps'] = str(bool(self.maps_var.get()))
         self.config['bot']['require_shaman'] = str(bool(self.shaman_var.get()))
         with open('config.ini', 'w') as configfile:
             self.config.write(configfile)
@@ -184,16 +185,21 @@ def create_options(frame1, config):
 	#Buy all units or only gifts and last.									  
     if config.has_option('bot', 'buy_units'):
         user_buy = int(config.getboolean('bot', 'buy_units'))
-    buy_var = IntVar()
+    buy_var = IntVar(value=user_buy)
 	#ADs on or off.			   
     if config.has_option('bot', 'watch_ad'):
         user_ads = int(config.getboolean('bot', 'watch_ad'))
     ads_var = IntVar(value=user_ads)
+    #Use Maps.			   
+    if config.has_option('bot', 'use_maps'):
+        user_map = int(config.getboolean('bot', 'use_maps'))
+    maps_var = IntVar(value=user_map)
     # Create Buttons
     ads_check = Checkbutton(frame1, text='Ads', variable=ads_var, justify=LEFT).grid(row=0, column=1, sticky=W)
     buy_check = Checkbutton(frame1, text='Buy', variable=buy_var, justify=LEFT).grid(row=0, column=2, sticky=W)
-    pve_check = Checkbutton(frame1, text='PvE', variable=pve_var, justify=LEFT).grid(row=0, column=3, sticky=W)
-    shaman_check = Checkbutton(frame1, text='Shaman', variable=shaman_var, justify=LEFT).grid(row=0, column=4, sticky=W)
+    map_check = Checkbutton(frame1, text='Maps', variable=maps_var, justify=LEFT).grid(row=0, column=3, sticky=W)
+    pve_check = Checkbutton(frame1, text='PvE', variable=pve_var, justify=LEFT).grid(row=0, column=4, sticky=W)
+    shaman_check = Checkbutton(frame1, text='Shaman', variable=shaman_var, justify=LEFT).grid(row=0, column=5, sticky=W)
     # Mana level targets
     mana_label = Label(frame1, text="Mana Level Targets", justify=LEFT).grid(row=2, column=0, sticky=W)
     stored_values = np.fromstring(config['bot']['mana_level'], dtype=int, sep=',')
@@ -208,7 +214,7 @@ def create_options(frame1, config):
     if config.has_option('bot', 'floor'):
         floor.insert(0, config['bot']['floor'])
     floor.grid(row=3, column=1)
-    return ads_var, buy_var, pve_var, shaman_var, mana_vars, floor
+    return ads_var, buy_var, pve_var, shaman_var, maps_var, mana_vars, floor
 
 
 def create_combat_info(frame2):
@@ -225,7 +231,7 @@ def create_combat_info(frame2):
 def create_base():
     root = Tk()
     root.title("RR bot")
-    root.geometry("800x600")
+    root.geometry("1000x600")
     # Set dark background
     root.configure(background='#575559')
     # Set window icon to png

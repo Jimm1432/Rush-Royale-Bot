@@ -388,8 +388,11 @@ class Bot:
                     self.click_button(pos + [30, 485])
                 elif floor % 3 == 2:
                     self.click_button(pos + [30, 885])
+                #if user_map:
                 self.click_button((400, 1500))
                 self.click_button((500, 600))
+                #else:
+                #self.click_button((500, 600))
                 for i in range(10):
                     time.sleep(2)
                     avail_buttons = self.get_current_icons(available=True)

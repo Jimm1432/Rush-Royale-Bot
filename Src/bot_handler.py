@@ -66,12 +66,13 @@ def start_bot_class(logger):
 
 
 # Loop for combat actions
-def combat_loop(bot, grid_df, mana_targets, user_target='demon_hunter.png'):  #config['dps_unit'].split('.')[0]
+def combat_loop(bot, grid_df, mana_targets, user_target='demon_hunter.png'): 
     time.sleep(0.1)
     # Spawn units
     bot.click(450, 1360)
+    time.sleep(0.1)
     bot.click(450, 1360)
-    bot.click(450, 1360)
+    time.sleep(0.1)
     bot.click(450, 1360)
     # Upgrade units
     bot.mana_level(mana_targets, hero_power=True)
@@ -88,15 +89,17 @@ def bot_loop(bot, info_event):
     config = bot.config['bot']
     user_pve = config.getboolean('pve', True)
     user_ads = config.getboolean('watch_ad', True)
-	#user_buy = config.getboolean('buy_units', False)													
+	#user_buy = config.getboolean('buy_units', False)
+    user_maps = config.getboolean('use_maps', True)    
     user_shaman = config.getboolean('require_shaman', False)
     user_floor = int(config.get('floor', 10))
     user_level = np.fromstring(config['mana_level'], dtype=int, sep=',')
     user_target = config['dps_unit'].split('.')[0] + '.png'
     bot.logger.info(f'PVE is set to {user_pve}')
+    bot.logger.info(f'Req Shaman for PvE {user_shaman}')
     bot.logger.info(f'ADs are set to {user_ads}')
     #bot.logger.info(f'Buy Units? {user_buy}')
-    bot.logger.info(f'Req Shaman for PvE {user_shaman}')
+    bot.logger.info(f'Use Maps? {user_maps}')
     # Load optional settings
     require_shaman = user_shaman
     max_loops = int(config.get('max_loops', 800))  # this will increase time waiting when logging in from mobile
