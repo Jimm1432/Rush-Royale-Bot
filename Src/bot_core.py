@@ -442,10 +442,10 @@ class Bot:
         self.click(30, 150)  # Stop scroll
         time.sleep(0.5)  # Add a 0.5-second delay here
         # Buy units or only gift based on provided coordinates and boolean
-        if gift_var:
+        #if gift_var:
         item_coords = [(156, 287), (748, 724)]
-        else:
-        item_coords = [(156, 287), (458, 288), (753, 287), (152, 724), (444, 735), (748, 724)]
+        #else:
+        #item_coords = [(156, 287), (458, 288), (753, 287), (152, 724), (444, 735), (748, 724)]
         for coord in item_coords:
             self.click_button(coord)  # Click on item
             time.sleep(1)  # Add a 0.5-second delay here
