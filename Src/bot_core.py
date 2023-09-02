@@ -431,7 +431,7 @@ class Bot:
      # Refresh items in shop when available
     def refresh_and_buy(self):
         self.click_button((100, 1500))  # Click store button
-        time.sleep(1)  # Add a 2-second delay here
+        time.sleep(1)  # Add a 1-second delay here
         self.click_button((100, 1500))  # Click store button
         self.click_button((450, 1300))  # Click store button
         [self.swipe([0, 0], [2, 0]) for i in range(15)]  # Swipe to top
@@ -440,8 +440,11 @@ class Bot:
         self.swipe([2, 0], [0, 0])  # Smaller downward swipe
         time.sleep(0.5)  # Add a 0.5-second delay here
         self.click(30, 150)  # Stop scroll
-        time.sleep(1)  # Add a 0.5-second delay here
-        # Click on the six items based on provided coordinates
+        time.sleep(0.5)  # Add a 0.5-second delay here
+        # Buy units or only gift based on provided coordinates and boolean
+        if gift_var:
+        item_coords = [(156, 287), (748, 724)]
+        else:
         item_coords = [(156, 287), (458, 288), (753, 287), (152, 724), (444, 735), (748, 724)]
         for coord in item_coords:
             self.click_button(coord)  # Click on item
