@@ -4,16 +4,14 @@ Updated and reworked by Jimm1432
 
 *Change Log*
 1.19
-Added option to buy all store units or simply claim the gift.
-Fixed Ads.
-Removed the option to turn ads off.
-More units are spawned, This is to stop mana building up and delays
-upgrades a few rounds.
+Curse detection and merge block.
+Puppeteer detection and upgrade block.
+Option added to use treasure maps.
+Improvements to merging for dryads and harlequin.
 1.18
 Added max talent units for better identifaction of units.
 1.17
 Added multiple Configs and a selector at start-up.
-Some work on ADs but unfinished, I will come back to it soon.
 1.16
 Added Shaman to GUI
 1.15

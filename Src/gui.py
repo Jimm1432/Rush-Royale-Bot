@@ -1,14 +1,15 @@
 from tkinter import *
-import shutil
+import shutil			 
 import os
 import numpy as np
 import threading
 import logging
 import configparser
-
+import subprocess
 # internal
 import bot_handler
 import bot_logger
+import config_selector
 
 # GUI Class
 class RR_bot:
@@ -25,7 +26,7 @@ class RR_bot:
         self.root = create_base()
         self.frames = self.root.winfo_children()
         # Setup frame 1 (options)
-        self.ads_var, self.buy_var, self.pve_var, self.shaman_var, self.maps_var, self.mana_vars, self.floor = create_options(self.frames[0], self.config)
+        self.ads_var, self.pve_var, self.shaman_var, self.treasure_map_green_var, self.treasure_map_gold_var, self.mana_vars, self.floor = create_options(self.frames[0], self.config)
         # Setup frame 2 (combat info)
         self.grid_dump, self.unit_dump, self.merge_dump = create_combat_info(self.frames[1])
         ## rest need to be cleaned up
@@ -39,10 +40,9 @@ class RR_bot:
         start_button = Button(self.frames[2], text="Start Bot", command=self.start_command)
         stop_button = Button(self.frames[2], text='Stop Bot', command=self.stop_bot, padx=20)
         leave_dungeon = Button(self.frames[2], text='Quit Floor/PvP', command=self.leave_game, bg='#ff0000', fg='#000000')
-        start_button.grid(row=0, column=1, padx=10)
+        start_button.grid(row=0, column=1, padx=5)
         stop_button.grid(row=0, column=2, padx=5)
         leave_dungeon.grid(row=0, column=3, padx=5)
-
         self.frames[0].pack(padx=0, pady=0, side=TOP, anchor=NW)
         self.frames[1].pack(padx=10, pady=10, side=RIGHT, anchor=SE)
         self.frames[2].pack(padx=10, pady=10, side=BOTTOM, anchor=SW)
@@ -76,16 +76,18 @@ class RR_bot:
     # Update config file
     def update_config(self):
         # Update config file
-        self.config.read('config.ini')
         floor_var = int(self.floor.get())
         card_level = [var.get() for var in self.mana_vars] * np.arange(1, 6)
         card_level = card_level[card_level != 0]
+        self.config.read('config.ini')
         self.config['bot']['floor'] = str(floor_var)
         self.config['bot']['mana_level'] = np.array2string(card_level, separator=',')[1:-1]
         self.config['bot']['pve'] = str(bool(self.pve_var.get()))
-        self.config['bot']['buy'] = str(bool(self.buy_var.get()))
-        self.config['bot']['use_maps'] = str(bool(self.maps_var.get()))
+		#self.config['bot']['buy'] = str(bool(self.buy_var.get()))														 
+        self.config['bot']['watch_ad'] = str(bool(self.ads_var.get()))
         self.config['bot']['require_shaman'] = str(bool(self.shaman_var.get()))
+        self.config['bot']['treasure_map_green'] = str(bool(self.treasure_map_green_var.get()))
+        self.config['bot']['treasure_map_gold'] = str(bool(self.treasure_map_gold_var.get()))
         with open('config.ini', 'w') as configfile:
             self.config.write(configfile)
         self.logger.info("Stored settings to config!")
@@ -178,28 +180,32 @@ def create_options(frame1, config):
     if config.has_option('bot', 'pve'):
         user_pvp = int(config.getboolean('bot', 'pve'))
     pve_var = IntVar(value=user_pvp)
-	#Require Shaman for PvE.						
+    #ADs on or off.			   
+    if config.has_option('bot', 'watch_ad'):
+        user_ads = int(config.getboolean('bot', 'watch_ad'))
+    ads_var = IntVar(value=user_ads)
+    #Require Shaman for PvE.						
     if config.has_option('bot', 'require_shaman'):
         user_shaman = int(config.getboolean('bot', 'require_shaman'))
     shaman_var = IntVar(value=user_shaman)
 	#Buy all units or only gifts and last.									  
-    if config.has_option('bot', 'buy_units'):
-        user_buy = int(config.getboolean('bot', 'buy_units'))
-    buy_var = IntVar(value=user_buy)
-	#ADs on or off.			   
-    if config.has_option('bot', 'watch_ad'):
-        user_ads = int(config.getboolean('bot', 'watch_ad'))
-    ads_var = IntVar(value=user_ads)
+    #if config.has_option('bot', 'buy'):
+     #   user_buy = int(config.getboolean('bot', 'buy'))
+    #buy_var = IntVar(value=user_buy)
+
     #Use Maps.			   
-    if config.has_option('bot', 'use_maps'):
-        user_map = int(config.getboolean('bot', 'use_maps'))
-    maps_var = IntVar(value=user_map)
-    # Create Buttons
-    ads_check = Checkbutton(frame1, text='Ads', variable=ads_var, justify=LEFT).grid(row=0, column=1, sticky=W)
-    buy_check = Checkbutton(frame1, text='Buy', variable=buy_var, justify=LEFT).grid(row=0, column=2, sticky=W)
-    map_check = Checkbutton(frame1, text='Maps', variable=maps_var, justify=LEFT).grid(row=0, column=3, sticky=W)
-    pve_check = Checkbutton(frame1, text='PvE', variable=pve_var, justify=LEFT).grid(row=0, column=4, sticky=W)
-    shaman_check = Checkbutton(frame1, text='Shaman', variable=shaman_var, justify=LEFT).grid(row=0, column=5, sticky=W)
+    if config.has_option('bot', 'treasure_map_green'):
+        user_treasure_map_green = int(config.getboolean('bot', 'treasure_map_green'))
+    treasure_map_green_var = IntVar(value=user_treasure_map_green)
+    if config.has_option('bot', 'treasure_map_gold'):
+        user_treasure_map_gold = int(config.getboolean('bot', 'treasure_map_gold'))
+    treasure_map_gold_var = IntVar(value=user_treasure_map_gold)
+    # Buttons		 
+    pve_check = Checkbutton(frame1, text='PvE', variable=pve_var, justify=LEFT).grid(row=0, column=1, sticky=W)
+    ad_check = Checkbutton(frame1, text='ADs', variable=ads_var, justify=LEFT).grid(row=0, column=2, sticky=W)
+    shaman_check = Checkbutton(frame1, text='W/Shaman *PvE ONLY*', variable=shaman_var, justify=LEFT).grid(row=0, column=3, sticky=W)
+    treasure_map_green_check = Checkbutton(frame1, text='Use Green', variable=treasure_map_green_var, justify=LEFT).grid(row=0, column=4, sticky=W)
+    treasure_map_gold_check = Checkbutton(frame1, text='Use Gold', variable=treasure_map_gold_var, justify=LEFT).grid(row=0, column=5, sticky=W)
     # Mana level targets
     mana_label = Label(frame1, text="Mana Level Targets", justify=LEFT).grid(row=2, column=0, sticky=W)
     stored_values = np.fromstring(config['bot']['mana_level'], dtype=int, sep=',')
@@ -214,7 +220,7 @@ def create_options(frame1, config):
     if config.has_option('bot', 'floor'):
         floor.insert(0, config['bot']['floor'])
     floor.grid(row=3, column=1)
-    return ads_var, buy_var, pve_var, shaman_var, maps_var, mana_vars, floor
+    return ads_var, pve_var, shaman_var, treasure_map_green_var, treasure_map_gold_var, mana_vars, floor
 
 
 def create_combat_info(frame2):
@@ -231,7 +237,7 @@ def create_combat_info(frame2):
 def create_base():
     root = Tk()
     root.title("RR bot")
-    root.geometry("1000x600")
+    root.geometry("800x600")
     # Set dark background
     root.configure(background='#575559')
     # Set window icon to png
@@ -255,8 +261,14 @@ def write_to_widget(root, tbox, text):
     tbox.insert(END, text)
     tbox.config(state=DISABLED)
     root.update_idletasks()
-    
- 
+
+def config_selector():
+    try:
+        subprocess.run(["python", "config_selector.py"], check=True)
+    except subprocess.CalledProcessError as e:
+        print("Error:", e)
+
+
 # Start the actual bot
 if __name__ == "__main__":
     bot_gui = RR_bot()

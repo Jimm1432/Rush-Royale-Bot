@@ -9,7 +9,7 @@ import cv2
 import port_scan
 import bot_core
 import bot_perception
-import config_selector
+#import config_selector					  
 
 import zipfile
 import functools
@@ -66,40 +66,40 @@ def start_bot_class(logger):
 
 
 # Loop for combat actions
-def combat_loop(bot, grid_df, mana_targets, user_target='demon_hunter.png'): 
-    time.sleep(0.1)
-    # Spawn units
-    bot.click(450, 1360)
-    time.sleep(0.1)
-    bot.click(450, 1360)
-    time.sleep(0.1)
-    bot.click(450, 1360)
-    # Upgrade units
-    bot.mana_level(mana_targets, hero_power=True)
+def combat_loop(bot, combat, grid_df, mana_targets, user_target='demon_hunter.png'):  
+    time.sleep(0.2)
+
+    if combat <= 10:
+        spawn_units(bot, num_units=4)
+    else:
+        # Upgrade units
+        bot.mana_level(mana_targets, hero_power=True)
+        # Spawn unit
+        spawn_units(bot, num_units=1)
+
     # Try to merge units
     grid_df, unit_series, merge_series, df_groups, info = bot.try_merge(prev_grid=grid_df, merge_target=user_target)
     return grid_df, unit_series, merge_series, df_groups, info
 
+def spawn_units(bot, num_units=4):
+    for _ in range(num_units):
+        bot.click(450, 1360)
 
 # Run the bot
 def bot_loop(bot, info_event):
-    #Load config selector
-    config_selector.move_window
-    # Load user config
+						 
+	# Load user config
     config = bot.config['bot']
     user_pve = config.getboolean('pve', True)
     user_ads = config.getboolean('watch_ad', True)
-	#user_buy = config.getboolean('buy_units', False)
-    user_maps = config.getboolean('use_maps', True)    
     user_shaman = config.getboolean('require_shaman', False)
-    user_floor = int(config.get('floor', 10))
-    user_level = np.fromstring(config['mana_level'], dtype=int, sep=',')
-    user_target = config['dps_unit'].split('.')[0] + '.png'
     bot.logger.info(f'PVE is set to {user_pve}')
     bot.logger.info(f'Req Shaman for PvE {user_shaman}')
     bot.logger.info(f'ADs are set to {user_ads}')
     #bot.logger.info(f'Buy Units? {user_buy}')
-    bot.logger.info(f'Use Maps? {user_maps}')
+    user_floor = int(config.get('floor', 10))
+    user_level = np.fromstring(config['mana_level'], dtype=int, sep=',')
+    user_target = config['dps_unit'].split('.')[0] + '.png'
     # Load optional settings
     require_shaman = user_shaman
     max_loops = int(config.get('max_loops', 800))  # this will increase time waiting when logging in from mobile
@@ -117,6 +117,7 @@ def bot_loop(bot, info_event):
     # Wait for game to load
     while (not bot.bot_stop):
         bot.store_visited = False  # Reset the store_visited attribute
+        # Fetch screen and check state
         output = bot.battle_screen(start=False)
         if output[1] == 'fighting':
             watch_ad = True
@@ -136,7 +137,7 @@ def bot_loop(bot, info_event):
                 bot.restart_RR(quick_disconnect=True)
             # Combat Section
             grid_df, bot.unit_series, bot.merge_series, bot.df_groups, bot.info = combat_loop(
-                bot, grid_df, user_level, user_target)
+                bot, combat, grid_df, user_level, user_target)
             bot.grid_df = grid_df.copy()
             bot.combat = combat
             bot.output = output[1]
@@ -167,10 +168,16 @@ def check_scrcpy(logger):
         # Download
         download('https://github.com/Genymobile/scrcpy/releases/download/v1.25/scrcpy-win64-v1.25.zip', 'scrcpy.zip')
         with zipfile.ZipFile('scrcpy.zip', 'r') as zip_ref:
-            zip_ref.extractall('.scrcpy')
+            for member in zip_ref.namelist():
+                if not member.endswith('/'):  # Exclude directories
+                    # Extract the file directly into the .scrcpy folder
+                    extracted_path = os.path.join('.scrcpy', os.path.basename(member))
+                    os.makedirs(os.path.dirname(extracted_path), exist_ok=True)  # Create the directory if it doesn't exist
+                    with zip_ref.open(member) as source, open(extracted_path, 'wb') as target:
+                        shutil.copyfileobj(source, target)
         # Verify
         if os.path.exists('.scrcpy/scrcpy.exe'):
-            logger.info('scrcpy succesfully installed')
-            # remove zip file
+            logger.info('scrcpy successfully installed')
+            # Remove the zip file
             os.remove('scrcpy.zip')
             return True

@@ -21,6 +21,7 @@ class Bot:
         self.bot_stop = False
         self.combat = self.output = self.grid_df = self.unit_series = self.merge_series = self.df_groups = self.info = self.combat_step = None
         self.logger = logging.getLogger('__main__')
+        self.selected_units = os.listdir("units")
         if device is None:
             device = port_scan.get_device()
         if not device:
@@ -63,7 +64,7 @@ class Bot:
     def click_button(self, pos):
         coords = np.array(pos) + 10
         self.click(*coords)
-        time.sleep(SLEEP_DELAY * 5) #was 10
+        time.sleep(SLEEP_DELAY * 10)
 
     # Swipe on combat grid to merge units
     def swipe(self, start, end):
@@ -113,7 +114,7 @@ class Bot:
 
     # find icon on screen
     def getXYByImage(self, target, new=True):
-        valid_targets = ['battle_icon', 'collect_pvp', 'pvp_button', 'back_button', '0watch_ad', 'quest_collect', '1cont_button', 'fighting']
+        valid_targets = ['ads', 'ad_season', 'ad_pve', 'ad_pvp', 'battle_icon', 'watch' 'pvp_button', 'back_button', '0cont_button', 'fighting']
         if not target in valid_targets:
             return "INVALID TARGET"
         if new:
@@ -205,7 +206,7 @@ class Bot:
         unit_chosen = merge_df['grid_pos'].tolist()
         # Send Merge
         self.swipe(*unit_chosen)
-        time.sleep(0.1)
+        time.sleep(0.2)
         return merge_df
 
     # Merge special units ['harlequin.png','dryad.png','mime.png','scrapper.png']
@@ -214,7 +215,9 @@ class Bot:
         # Get special merge unit
         special_unit, normal_unit = [
             adv_filter_keys(merge_series, units=special_type, remove=remove) for remove in [False, True]
-        ]  # scrapper support not tested
+        ]
+        # self.logger.debug(f'special_unit: {special_unit}')
+        # self.logger.debug(f'normal_unit: {normal_unit}')
         # Get corresponding dataframes
         special_df, normal_df = [df_split.get_group(unit.index[0]).sample() for unit in [special_unit, normal_unit]]
         merge_df = pd.concat([special_df, normal_df])
@@ -222,7 +225,7 @@ class Bot:
         # Merge 'em
         unit_chosen = merge_df['grid_pos'].tolist()
         self.swipe(*unit_chosen)
-        time.sleep(0.1)
+        time.sleep(0.2)
         return merge_df
 
     def log_merge(self, merge_df):
@@ -269,6 +272,26 @@ class Bot:
                     merge_df = self.merge_special_unit(df_split, merge_series_target, special_type='harlequin.png')
                     break
         return merge_df
+    
+    # Scrapper merge
+    # Will stop any merge with dps unit that's higher than rank 2
+    def scrapper_merge(self, df_split, merge_target, merge_series, merge_series_with_scrapper, target='knight_statue.png'):
+        merge_df = None
+        # Try to copy target
+        scrapper_series = adv_filter_keys(merge_series_with_scrapper, units='scrapper.png')
+        if not scrapper_series.empty:
+            scrapper_rank = scrapper_series.index.get_level_values('rank')
+            for rank in scrapper_rank:
+                # Prevent scrapper from eating merge targets above rank 2
+                if target == merge_target and rank > 2:
+                    break
+                
+                merge_series_target = adv_filter_keys(merge_series_with_scrapper, units=['scrapper.png', target], ranks=rank)
+
+                if len(merge_series_target.index) == 2:
+                    merge_df = self.merge_special_unit(df_split, merge_series_target, special_type='scrapper.png')
+                    break
+        return merge_df
 
     # Try to find a merge target and merge it
     def try_merge(self, rank=1, prev_grid=None, merge_target='zealot.png'):
@@ -281,66 +304,149 @@ class Bot:
         merge_series = unit_series.copy()
         # Remove empty groups
         merge_series = adv_filter_keys(merge_series, units='empty.png', remove=True)
-        # Do special merge with dryad/Harley
-        self.special_merge(df_split, merge_series, merge_target)
-        # Use harely on high dps targets
-        if merge_target == 'demon_hunter.png':
-            self.harley_merge(df_split, merge_series, target=merge_target)
-            # Remove all demons (for co-op)
-            demons = adv_filter_keys(merge_series, units='demon_hunter.png')
-            num_demon = sum(demons)
-            if num_demon >= 11:
-                # If board is mostly demons, chill out
-                self.logger.info(f'Board is full of demons, waiting...')
-                time.sleep(5) #was 10
-            if self.config.getboolean('bot', 'require_shaman'):
-                merge_series = adv_filter_keys(merge_series, units='demon_hunter.png', remove=True)
-        merge_series = preserve_unit(merge_series, target='trapper.png')
-        # Remove 4x cauldrons
-        for _ in range(4):
-            merge_series = preserve_unit(merge_series, target='cauldron.png', keep_min=True)
-        # Try to keep knight_statue numbers even (can conflict if special_merge already merged)
-        num_knight = sum(adv_filter_keys(merge_series, units='knight_statue.png'))
-        if num_knight % 2 == 1:
-            self.harley_merge(df_split, merge_series, target='knight_statue.png')
-        # Preserve 2 highest knight statues
-        for _ in range(2):
-            merge_series = preserve_unit(merge_series, target='knight_statue.png')
-        # Select stuff to merge
-        merge_series = merge_series[merge_series >= 2]  # At least 2 units
-        merge_series = adv_filter_keys(merge_series, ranks=7, remove=True)  # Remove max ranks
-        # Try to merge high priority units
-        merge_prio = adv_filter_keys(merge_series,
-                                     units=['chemist.png', 'bombardier.png', 'sword.png', 'summoner.png', 'trapper.png', 'knight_statue.png'])
-        if not merge_prio.empty:
-            info = 'Merging High Priority!'
-            merge_df = self.merge_unit(df_split, merge_prio)
-        # Merge if board is getting full. Runs well with 1 also.
-        if df_groups['empty.png'] <= 1:
-            info = 'Merging!'
-            # Add criteria
-            low_series = adv_filter_keys(merge_series, ranks=rank, remove=False)
-            if not low_series.empty:
-                merge_df = self.merge_unit(df_split, low_series)
-            else:
-                # If grid seems full, merge more units
-                info = 'Merging high level!'
-                merge_series = adv_filter_keys(merge_series,
-                                               ranks=[3, 4, 5, 6, 7],
-                                               units=['zealot.png', 'crystal.png', 'bruser.png', merge_target],
-                                               remove=True)
-                if not merge_series.empty:
-                    merge_df = self.merge_unit(df_split, merge_series)
+        
+        if self.block_merging():
+            return grid_df, unit_series, merge_series, merge_df, info
         else:
-            info = 'Need more units!'
-        return grid_df, unit_series, merge_series, merge_df, info
+        
+          ####### HARLEY/DRYAD #######
+          if 'harlequin.png' in self.selected_units or 'dryad.png' in self.selected_units:
+            # Do special merge with dryad/Harley
+            self.special_merge(df_split, merge_series, merge_target)
+
+
+          ####### DEMON HUNTER #######
+          if merge_target == 'demon_hunter.png':
+              # Use harley on DHs starting from rank 2
+              self.harley_merge(df_split, merge_series, target=merge_target)
+              # Keep all DHs on the board starting from rank 2
+              num_dh = sum(adv_filter_keys(merge_series, ranks=[2,3,4,5,6,7], units='demon_hunter.png'))
+              # Take a backup of the merge series before removing DH
+              merge_series_with_dh = merge_series
+              for i in range(num_dh):
+                  merge_series = preserve_unit(merge_series, target='demon_hunter.png', keep_min=False)
+
+              # Keep all demons on the board if teammate runs shaman deck
+              if self.config.getboolean('bot', 'require_shaman'):
+                  merge_series = adv_filter_keys(merge_series, units='demon_hunter.png', remove=True)
+
+          ####### TRAPPER #######
+          if 'trapper.png' in self.selected_units:
+              # Keep highest rank trapper
+              merge_series = preserve_unit(merge_series, target='trapper.png', keep_min=False)
+
+          ####### SCRAPPER #######
+          # Skip all of this if scrapper is not used
+          if 'scrapper.png' in self.selected_units:
+              selected_units_copy = self.selected_units.copy()
+              # Backup the merge series that has the scrapper we intend to save
+              # Need that one later so we can find a merge match from this backed up series
+              merge_series_with_scrapper = merge_series.copy()
+              # Keep lowest rank scrapper
+              merge_series = preserve_unit(merge_series, target='scrapper.png', keep_min=True)
+
+              # Start scrapping once we have enough high rank units of our merge_target on the board
+              # OR if our board is getting too full
+              num_merge_target = sum(adv_filter_keys(merge_series, ranks=[3,4,5,6,7], units=merge_target))
+              if (num_merge_target >= 6) and (df_groups['empty.png'] <= 1):
+                  # Remove merge_target from the selected_units to avoid scrapping it too early
+                  selected_units_copy.remove(merge_target)
+                  # Also remove scrapper ofcourse
+                  selected_units_copy.remove('scrapper.png')
+                  # Try to merge with any of the detected units
+                  self.scrapper_merge(df_split, merge_target, merge_series, merge_series_with_scrapper, target=selected_units_copy[0])
+                  self.scrapper_merge(df_split, merge_target, merge_series, merge_series_with_scrapper, target=selected_units_copy[1])
+                  self.scrapper_merge(df_split, merge_target, merge_series, merge_series_with_scrapper, target=selected_units_copy[2])
+                  # Try to scrap the merge target as a last resort
+                  self.scrapper_merge(df_split, merge_target, merge_series, merge_series_with_scrapper, target=merge_target)
+
+                  # If we get stuck with scrapping, specifically for DH we need to clear up some room on the board
+                  # Simplest way is to allow it to merge rank 2 DH's
+                  if merge_target == 'demon_hunter.png':
+                      if (df_groups['empty.png'] < 1):
+                          merge_series = merge_series_with_dh.copy()
+                          # Remove Scrapper again
+                          merge_series = preserve_unit(merge_series, target='scrapper.png', keep_min=True)
+                          # Keep all DHs on the board starting from rank 3
+                          num_dh = sum(adv_filter_keys(merge_series, ranks=[3,4,5,6,7], units='demon_hunter.png'))
+                          for i in range(num_dh):
+                              merge_series = preserve_unit(merge_series, target='demon_hunter.png', keep_min=False)
+
+
+
+          ####### CAULDRON #######
+          if 'cauldron.png' in self.selected_units:
+              # Remove 4x cauldrons
+              for _ in range(4):
+                  merge_series = preserve_unit(merge_series, target='cauldron.png', keep_min=True)
+
+          ####### KNIGHT STATUE #######
+          if 'knight_statue.png' in self.selected_units or 'banner.png' in self.selected_units:
+              # Try to keep knight_statue numbers even (can conflict if special_merge already merged)
+              num_knight = sum(adv_filter_keys(merge_series, units=['knight_statue.png', 'banner.png']))
+              if num_knight % 2 == 1:
+                  self.harley_merge(df_split, merge_series, target=['knight_statue.png', 'banner.png'])
+              # Preserve 2 highest knight statues
+              for _ in range(2):
+                  merge_series = preserve_unit(merge_series, target=['knight_statue.png', 'banner.png'])
+          # Select stuff to merge
+          merge_series = merge_series[merge_series >= 2]  # At least 2 units
+          merge_series = adv_filter_keys(merge_series, ranks=7, remove=True)  # Remove max ranks
+          # Try to merge high priority units
+          merge_prio = adv_filter_keys(merge_series,
+                                       units=['chemist.png', 'bombardier.png', 'sword.png', 'summoner.png', 'trapper.png', 'knight_statue.png'])
+          if not merge_prio.empty:
+              info = 'Merging High Priority!'
+              merge_df = self.merge_unit(df_split, merge_prio)
+          # Merge if board is getting full. Runs well with 1 also.
+          if df_groups['empty.png'] <= 1:
+              info = 'Merging!'
+              # Add criteria
+              low_series = adv_filter_keys(merge_series, ranks=rank, remove=False)
+              if not low_series.empty:
+                  merge_df = self.merge_unit(df_split, low_series)
+              else:
+                  # If grid seems full, merge more units
+                  info = 'Merging high level!'
+                  merge_series = adv_filter_keys(merge_series,
+                                                 ranks=[3, 4, 5, 6, 7],
+                                                 units=['zealot.png', 'crystal.png', 'bruser.png', merge_target],
+                                                 remove=True)
+                  if not merge_series.empty:
+                      merge_df = self.merge_unit(df_split, merge_series)
+          else:
+              info = 'need more units!'
+          return grid_df, unit_series, merge_series, merge_df, info
+
+    def block_merging(self):
+        if hasattr(self, 'available_icons'):
+            df = self.available_icons
+            # Don't merge if curse is detected
+            if 'curse.png' in df['icon'].values:
+                self.logger.info(f'Curse detected, not merging. Sleeping 15s')
+                time.sleep(15)
+                return True
+
+            # Don't merge if Bedlam has spawned
+            if 'bedlam.png' in df['icon'].values and 'bedlam_is_coming_pve.png' not in df['icon'].values and 'bedlam_is_coming_pvp.png' not in df['icon'].values:
+                self.logger.info(f'Bedlam spawned, not merging. Sleeping 10s')
+                time.sleep(10)
+                return True
+        return False
 
     # Mana level cards
     def mana_level(self, cards, hero_power=False):
         upgrade_pos_dict = {1: [100, 1500], 2: [200, 1500], 3: [350, 1500], 4: [500, 1500], 5: [650, 1500]}
-        # Level each card
-        for card in cards:
-            self.click(*upgrade_pos_dict[card])
+        if hasattr(self, 'available_icons'):
+            df = self.available_icons
+            # Don't level cards if Puppeteer has spawned
+            if 'puppeteer.png' in df['icon'].values and 'puppeteer_is_coming_pve.png' not in df['icon'].values and 'puppeteer_is_coming_pvp.png' not in df['icon'].values:
+                self.logger.info(f'Puppeteer spawned, not upgrading cards. Sleeping 10s')
+                time.sleep(10)
+            else:
+                # Level each card
+                for card in cards:
+                    self.click(*upgrade_pos_dict[card])
         if hero_power:
             self.click(800, 1500)
 
@@ -382,32 +488,47 @@ class Bot:
 
             # Click play floor if found
             if not (pos == np.array([0, 0])).any():
+                treasure_map_coords = self.get_treasure_map_to_click()
                 if floor % 3 == 0:
                     self.click_button(pos + [30, -460])
                 elif floor % 3 == 1:
                     self.click_button(pos + [30, 485])
                 elif floor % 3 == 2:
                     self.click_button(pos + [30, 885])
-                #if user_map:
-                self.click_button((400, 1500))
+                if treasure_map_coords is not None:
+                    self.click_button(treasure_map_coords)
                 self.click_button((500, 600))
-                #else:
-                #self.click_button((500, 600))
-                for i in range(10):
-                    time.sleep(2)
+                for i in range(15):
+                    time.sleep(0.5)
                     avail_buttons = self.get_current_icons(available=True)
                     # Look for correct chapter
                     self.logger.info(f'Waiting for match to start {i}')
                     if avail_buttons['icon'].isin(['back_button.png', 'fighting.png']).any():
                         break
 
+    #Scan and click treasure map buttons
+    def get_treasure_map_to_click(self):
+        if self.config.getboolean('bot', 'treasure_map_green') or self.config.getboolean('bot', 'treasure_map_gold'):
+            df = self.get_current_icons(available=True)
+            if self.config.getboolean('bot', 'treasure_map_green') and 'treasure_map_green.png' in df['icon'].values:
+                df_click_green = df[df['icon'] == 'treasure_map_green.png']
+                if not df_click_green.empty:
+                    return (350, 1450)
+            elif self.config.getboolean('bot', 'treasure_map_gold') and 'treasure_map_gold.png' in df['icon'].values and 'treasure_map_gold_is_zero.png' not in df['icon'].values:
+                df_click_gold = df[df['icon'] == 'treasure_map_gold.png']
+                if not df_click_gold.empty:
+                    return (520, 1450)
+        return None
+
+
     # Locate game home screen and try to start fight.
     def battle_screen(self, start=False, pve=True, floor=5):
         # Scan screen for any key buttons
-        df = self.get_current_icons(available=True)
+        self.available_icons = self.get_current_icons(available=True)
+        df = self.available_icons
         if not df.empty:
             # list of buttons
-            if (df == 'fighting.png').any(axis=None) and not (df == '1cont_button.png').any(axis=None):
+            if (df == 'fighting.png').any(axis=None) and not (df == '0cont_button.png').any(axis=None):
                 return df, 'fighting'
             if (df == 'friend_menu.png').any(axis=None):
                 self.click_button(np.array([100, 600]))
@@ -422,8 +543,11 @@ class Bot:
                     self.click_button(np.array([140, 1259]))
                 time.sleep(1)
                 return df, 'home'
+            # Watch ad at the end of a fight
+            if (df == 'ad_fight_end.png').any(axis=None) and ((df == 'victory.png').any(axis=None)):
+                self.watch_ads()
             # Check first button is clickable
-            df_click = df[df['icon'].isin(['back_button.png', 'battle_icon.png', 'collect_pvp.png' 'watch.png', 'refresh.png', '1cont_button.png', '1quit.png'])]
+            df_click = df[df['icon'].isin(['back_button.png', 'battle_icon.png', '0cont_button.png', '1quit.png'])]
             if not df_click.empty:
                 button_pos = df_click['pos [X,Y]'].tolist()[0]
                 self.click_button(button_pos)
@@ -431,13 +555,14 @@ class Bot:
         self.shell(f'input keyevent {const.KEYCODE_BACK}')  #Force back
         return df, 'lost'
 
+     # Navigate and locate store refresh button from battle screen
      # Refresh items in shop when available
     def refresh_and_buy(self):
         self.click_button((100, 1500))  # Click store button
         time.sleep(1)  # Add a 1-second delay here
         self.click_button((100, 1500))  # Click store button
         self.click_button((450, 1300))  # Click store button
-        [self.swipe([0, 0], [2, 0]) for i in range(15)]  # Swipe to top
+        [self.swipe([0, 0], [2, 0]) for i in range(5)]  # Swipe to top
         time.sleep(2)  # Add a 2-second delay here
         # Perform one small downward scroll
         self.swipe([2, 0], [0, 0])  # Smaller downward swipe
@@ -445,52 +570,70 @@ class Bot:
         self.click(30, 150)  # Stop scroll
         time.sleep(0.5)  # Add a 0.5-second delay here
         # Buy units or only gift based on provided coordinates and boolean
-        #if gift_var:
+        #if buy_var:
         item_coords = [(156, 287), (748, 724)]
         #else:
         #item_coords = [(156, 287), (458, 288), (753, 287), (152, 724), (444, 735), (748, 724)]
         for coord in item_coords:
             self.click_button(coord)  # Click on item
-            time.sleep(1)  # Add a 0.5-second delay here
+            time.sleep(0.5)  #0.5-second delay
             self.click(400, 1130)  # Buy
-            time.sleep(1)  # Add a 0.5-second delay here
+            time.sleep(0.5)  #0.5-second delay
             self.click(30, 150)  # Remove pop-up
-            time.sleep(1)  # Add a 0.5-second delay here
+            time.sleep(0.5)  #0.5-second
         # Locate the refresh button
         avail_buttons = self.get_current_icons(available=True)
         if (avail_buttons == 'refresh.png').any(axis=None):
             pos = get_button_pos(avail_buttons, 'refresh.png')
             self.click_button(pos)  # Refresh
             self.watch_ads()  
-
-        self.store_visited = True
-        self.logger.warning('Bought store units!')
-            
+        self.store_visited = True							  
 
     def watch_ads(self):
         avail_buttons = self.get_current_icons(available=True)
         # Watch ad if available
-        if (avail_buttons == 'battle_icon.png').any(axis=None):
-            if not self.store_visited:
-                self.refresh_and_buy()
-        elif (avail_buttons == 'quest_done.png').any(axis=None):
+        if (avail_buttons == 'quest_done.png').any(axis=None):
             pos = get_button_pos(avail_buttons, 'quest_done.png')
             self.click_button(pos)
-            self.click(700, 600)  # collect first completed quest.
-            self.click(700, 400)  # collect second completed quest.
+            #self.click(95, 260)
+            time.sleep(0.5)  #0.5-second delay
+            if (avail_buttons == 'quest_collect.png').any(axis=None):
+                pos = get_button_pos(avail_buttons, 'quest_collect.png')
+                self.click_button(pos)
+                #self.click(725, 625)
+                time.sleep(0.5)  #0.5-second delay
+                self.click_button(pos)
+                #self.click(725, 625)  # collect first completed quest.
+                time.sleep(0.5)  #0.5-second delay
+            self.click(725, 400)  # watch mega ad chest.
             [self.click(150, 250) for i in range(2)]  # click dailies twice.
             self.click(420, 420)  # collect ad chest.
         elif (avail_buttons == 'ad_season.png').any(axis=None):
             pos = get_button_pos(avail_buttons, 'ad_season.png')
             self.click_button(pos)
-        elif (avail_buttons == 'ads.png').any(axis=None):
-            pos = get_button_pos(avail_buttons, 'ads.png')
+            #self.click(150, 1090)
+            self.logger.info('Watching Token AD')
+        elif (avail_buttons == 'ad_pve.png').any(axis=None):
+            pos = get_button_pos(avail_buttons, 'ad_pve.png')
             self.click_button(pos)
+            #self.click(550, 1200)
+            self.logger.info('Watching PvE AD')
+        elif (avail_buttons == 'ad_pvp.png').any(axis=None):
+            pos = get_button_pos(avail_buttons, 'ad_pvp.png')
+            self.click_button(pos)
+            #self.click(120, 1200) 
+            self.logger.info('Watching PvP AD')
         elif (avail_buttons == 'watch.png').any(axis=None):
             pos = get_button_pos(avail_buttons, 'watch.png')
             self.click_button(pos)
+            self.logger.info('Watching WATCH.png ad')
+        elif (avail_buttons == 'ad_fight_end.png').any(axis=None):
+            pos = get_button_pos(avail_buttons, 'ad_fight_end.png')
+            self.click_button(pos)
+            self.logger.info('Watching Post-Battle AD')
         elif (avail_buttons == 'battle_icon.png').any(axis=None):
-            self.refresh_shop()
+            if not self.store_visited:
+                self.refresh_and_buy()    
         else:
             self.logger.info('Watched all ads!')
             return
@@ -501,7 +644,8 @@ class Bot:
             if status == 'menu' or status == 'home':
                 self.logger.info('FINISHED AD')
                 return
-            time.sleep(2)
+			 
+            time.sleep(1)
             attempts += 1
         # Attempt to click the X mark for 10 seconds
         attempts = 0
@@ -520,7 +664,7 @@ class Bot:
             if status == 'menu' or status == 'home':
                 self.logger.info('FINISHED AD')
                 return
-            time.sleep(2)
+            time.sleep(1)
             attempts += 1
         # If the bot hasn't returned to the home screen after 40 seconds:
         self.logger.info(f'AD TIME {attempts} {status}')
@@ -662,6 +806,14 @@ def adv_filter_keys(unit_series, units=None, ranks=None, remove=False):
     else:
         series = series[series.index.isin(filtered_ranks.index)]
     return series
+
+
+# Will spam read all knowledge in knowledge base for free gold, roughly 3k, 100 gems
+def read_knowledge(bot):
+    spam_click = range(1000)
+    for i in spam_click:
+        bot.click(450, 1300, 0.1)
+
 
 def get_button_pos(df, button):
     #button=button+'.png'
