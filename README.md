@@ -52,16 +52,4 @@ Settings:
 
 * Run launch_gui.bat to start the bots GUI.
 
-* Most setting are controlled by the GUI, However the units must be added to the decks manually and you should also add the DPS unit. There are 5 decks you can set up in the "configs" folder. 
-
-Check all_units folder to get correct unit names for setup.
-
-
-Send any Tips for me to keep updating and improving this via
-
-Bitcoin
-3EQq6Zf5isPdekRSryR51xD3eQ2BR7Mwi4
-
-Eth
-0x1d2Cc985199d4085b3aEFe8Fc7773Eb761E3b7b6
-
+* Units have to be configured in config.ini file first, Other settings are set by GUI. 
