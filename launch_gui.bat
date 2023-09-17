@@ -1,2 +1,3 @@
 call .bot_env\Scripts\activate.bat
-python Src\gui.py
+start python Src\gui.py 
+start pythonw Src\config_selector.py
