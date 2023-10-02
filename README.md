@@ -52,4 +52,8 @@ Settings:
 
 * Run launch_gui.bat to start the bots GUI.
 
-* Units have to be configured in config.ini file first, Other settings are set by GUI. 
+* Units have to be configured in config.ini file first, Other settings are set by GUI.
+
+  **Donate**
+
+  * Paypal only right now, mr.doble@gmail dot com
