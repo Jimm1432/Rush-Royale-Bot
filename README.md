@@ -56,4 +56,4 @@ Settings:
 
   **Donate**
 
-  * Paypal only right now, mr.doble@gmail dot com
+  * Paypal only right now, james@thedoble dot co.uk
