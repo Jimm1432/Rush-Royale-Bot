@@ -55,5 +55,5 @@ Settings:
 * Units have to be configured in config.ini file first, Other settings are set by GUI.
 
   **Donate**
-<a href="bitcoin:1DRHXGM1fMwug8HhmcCfRNGtWCJj2x7SuS">Click here to donate</a>
+bitcoin:3F7iPCCC6Xwpuc3kbQQTJ8fjsaR2A531x6
 
