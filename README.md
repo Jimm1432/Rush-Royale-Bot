@@ -56,4 +56,4 @@ Settings:
 
 * If you enjoy this then feel free to buy my a beer and keep me motivated to update regularly. 
  
- bitcoin:bc1qvphug3s4dtm42t5xdf4lrlgd6psys96thgcd50
+bitcoin:1KCNEB4rudxEK8CnfCshNn81hhC6heYzq8
