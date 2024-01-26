@@ -72,6 +72,6 @@ def get_device():
     device = get_adb_device()
     if not device:
         # Find valid ADB device by scanning ports
-        device = scan_ports('127.0.0.1', 48000, 65000)
+        device = scan_ports('127.0.0.1', 50000, 65000)
     if device:
         return device

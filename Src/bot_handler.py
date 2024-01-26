@@ -9,7 +9,6 @@ import cv2
 import port_scan
 import bot_core
 import bot_perception
-#import config_selector					  
 
 import zipfile
 import functools
@@ -64,16 +63,15 @@ def start_bot_class(logger):
     bot = bot_core.Bot()
     return bot
 
-
 # Loop for combat actions
 def combat_loop(bot, combat, grid_df, mana_targets, user_target='demon_hunter.png'):  
     time.sleep(0.2)
 
-    if combat <= 10:
+    if combat <= 1:
         spawn_units(bot, num_units=4)
     else:
         # Upgrade units
-        bot.mana_level(mana_targets, hero_power=True)
+        bot.mana_level(mana_targets, combat, hero_power=True)
         # Spawn unit
         spawn_units(bot, num_units=1)
 
@@ -87,19 +85,28 @@ def spawn_units(bot, num_units=4):
 
 # Run the bot
 def bot_loop(bot, info_event):
-						 
-	# Load user config
+    # Load user config
     config = bot.config['bot']
     user_pve = config.getboolean('pve', True)
     user_ads = config.getboolean('watch_ad', True)
+    user_treasure_map_green = config.getboolean('treasure_map_green', True)
+    user_treasure_map_gold = config.getboolean('treasure_map_gold', False)
     user_shaman = config.getboolean('require_shaman', False)
-    bot.logger.info(f'PVE is set to {user_pve}')
-    bot.logger.info(f'Req Shaman for PvE {user_shaman}')
-    bot.logger.info(f'ADs are set to {user_ads}')
-    #bot.logger.info(f'Buy Units? {user_buy}')
+    user_clan_collect = config.getboolean('clan_collect', True)
+    user_clan_tournament = config.getboolean('clan_tournament', True)
+    user_clan_request_epic = config['request_epic'] + '.png' if config['request_epic'] else ''
+    user_clan_request_common_rare = config['request_common_rare'] + '.png' if config['request_common_rare'] else ''
     user_floor = int(config.get('floor', 10))
     user_level = np.fromstring(config['mana_level'], dtype=int, sep=',')
     user_target = config['dps_unit'].split('.')[0] + '.png'
+    shop_target = np.fromstring(config['shop_item'], dtype=int, sep=',')
+    bot.logger.info(f'PVE = {user_pve}')
+    bot.logger.info(f'ADs = {user_ads}')
+    bot.logger.info(f'Green maps = {user_treasure_map_green}')
+    bot.logger.info(f'Gold maps = {user_treasure_map_gold}')
+    bot.logger.info(f'Req Shaman for PvE = {user_shaman}')
+    bot.logger.info(f'Collect clan chat = {user_clan_collect}')
+    bot.logger.info(f'Play clan tourney = {user_clan_tournament}')
     # Load optional settings
     require_shaman = user_shaman
     max_loops = int(config.get('max_loops', 800))  # this will increase time waiting when logging in from mobile
@@ -109,6 +116,8 @@ def bot_loop(bot, info_event):
     wait = 0
     combat = 0
     watch_ad = False
+    clan_collect = False
+    clan_request = False
     grid_df = None
     # Wait for login
     time.sleep(5)
@@ -116,11 +125,15 @@ def bot_loop(bot, info_event):
     bot.logger.debug(f'Bot mainloop started')
     # Wait for game to load
     while (not bot.bot_stop):
-        bot.store_visited = False  # Reset the store_visited attribute
+        # Pass shop_targets
+        bot.shop_item = shop_target
+        bot.store_visited = False # Reset the store_visited attribute at the beginning of each loop iteration
         # Fetch screen and check state
         output = bot.battle_screen(start=False)
         if output[1] == 'fighting':
-            watch_ad = True
+            watch_ad = user_ads
+            clan_collect = user_clan_collect
+            clan_request = True if user_clan_request_epic or user_clan_request_common_rare else False
             wait = 0
             combat += 1
             if combat > max_loops:
@@ -136,8 +149,7 @@ def bot_loop(bot, info_event):
                 bot.logger.warning('Leaving game')
                 bot.restart_RR(quick_disconnect=True)
             # Combat Section
-            grid_df, bot.unit_series, bot.merge_series, bot.df_groups, bot.info = combat_loop(
-                bot, combat, grid_df, user_level, user_target)
+            grid_df, bot.unit_series, bot.merge_series, bot.df_groups, bot.info = combat_loop(bot, combat, grid_df, user_level, user_target)
             bot.grid_df = grid_df.copy()
             bot.combat = combat
             bot.output = output[1]
@@ -146,15 +158,24 @@ def bot_loop(bot, info_event):
             # Wait until late stage in combat then if consistency is ok and not stagnate save all units for ML model
             if combat == 25 and 5 < grid_df['Age'].mean() < 50 and train_ai:
                 bot_perception.add_grid_to_dataset()
-        elif output[1] == 'home' and watch_ad:
-            [bot.watch_ads() for i in range(5)]
-            watch_ad = False
+        elif (output[1] == 'home'):
+            if watch_ad:
+                [bot.watch_ads() for i in range(3)]
+                watch_ad = False
+            if clan_collect:
+                bot.collect_clan_chat()
+                clan_collect = False
+            if clan_request:
+                bot.request_clan_chat(user_clan_request_epic, user_clan_request_common_rare)
+                clan_request = False
+            if (watch_ad == False) and (clan_collect == False) and (clan_request == False):
+                output = bot.battle_screen(start=True, pve=user_pve, clan_tournament=user_clan_tournament, floor=user_floor)
         else:
             combat = 0
             bot.logger.info(f'{output[1]}, wait count: {wait}')
-            output = bot.battle_screen(start=True, pve=user_pve, floor=user_floor)
+            output = bot.battle_screen(start=False, pve=user_pve, clan_tournament=user_clan_tournament, floor=user_floor)
             wait += 1
-            if wait > 10:
+            if wait > 15:
                 bot.logger.warning('RESTARTING')
                 bot.restart_RR(),
                 wait = 0

@@ -1,8 +1,13 @@
-Rush Royale Bot v1.19
-Created by AxelBjork
+Rush Royale Bot v1.20
 Updated and reworked by Jimm1432
 
 *Change Log*
+1.20
+Shop items in GUI.
+Added rhandum roulette ad support
+Play clan tournament sandals
+Collect clan chat gifts
+Added clan request support, choose unit from GUI
 1.19
 Curse detection and merge block.
 Puppeteer detection and upgrade block.
@@ -48,5 +53,10 @@ Updated scrcpy to 1.25.
   \            `Y88888888P     /
    `.            d88888P'    ,'
      `.          888PP'    ,'
-       `-.      d8P'    ,-'   -CJ-
+       `-.      d8P'    ,-'   
           `-.,,_'__,,.-'
+          
+Special thanks to others work I have used at some time or another.
+AxelBjork
+Newb420  
+Niels-db       
