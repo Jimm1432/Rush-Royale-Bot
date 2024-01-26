@@ -1,17 +1,16 @@
 # Rush-Royale-Bot
 Python based bot for Rush Royale.
 
-Created by AxelBjork, Updated by Jimm1432
+Updated and reworked by Jimm1432
 
 Use with Bluestacks on PC
 
 ## Farm unlimited gold!
 * Can run 24/7 and allow you to easily upgrade all availble units with gold to spare.
-* Optimized to farm dungeon floor 5-10. 
 
 ## Functionality 
 * Can send low latency commands to game via Scrpy ADB
-* Automatically refreshes store, watches ads, completes quests, collects ad chest, buys units.
+* Automatically refreshes store/buys units, watches ads, completes quests, collects ad chests, plays clan tournment, collects clan items, request units.
 * Unit type detection with openCV: ORB detector
 * Rank detection with sklearn LogisticRegression (Very accurate)
 
@@ -51,8 +50,10 @@ Settings:
 
 * Run launch_gui.bat to start the bots GUI.
 
-* Units have to be configured in config.ini file first, Other settings are set by GUI.
+* Units have to be configured in configs folder first, Other settings are set by GUI. 
 
-  **Donate**
-bitcoin:3F7iPCCC6Xwpuc3kbQQTJ8fjsaR2A531x6
+**Donate**
 
+* If you enjoy this then feel free to buy my a beer and keep me motivated to update regularly. 
+ 
+ bitcoin:3F7iPCCC6Xwpuc3kbQQTJ8fjsaR2A531x6
