@@ -56,4 +56,5 @@ Settings:
 
 * If you enjoy this then feel free to buy my a beer and keep me motivated to update regularly. 
  
-bitcoin:bc1q0slyhjn76zyped0fv9wquy3avvh0hgsx3cv3lx
+Bitcoin:
+![qr-bc1q0slyhjn76zyped0fv9wquy3avvh0hgsx3cv3lx](https://github.com/Jimm1432/Rush-Royale-Bot/assets/36971481/7ffdc996-776c-4a97-b106-3c1b84128d10)
