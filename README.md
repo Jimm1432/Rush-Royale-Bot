@@ -16,7 +16,8 @@ Use with Bluestacks on PC
 
 ![output](https://user-images.githubusercontent.com/71280183/171181226-d680e7ca-729f-4c3d-8fc6-573736371dfb.png)
 
-![new_gui](https://user-images.githubusercontent.com/71280183/183141310-841b100a-2ddb-4f59-a6d9-4c7789ba72db.png)
+![Updated GUI](https://github.com/Jimm1432/Rush-Royale-Bot/assets/36971481/872f58a1-f2d1-4a16-88ce-ea15033c14a1)
+
 
 
 
