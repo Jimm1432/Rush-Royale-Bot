@@ -68,12 +68,12 @@ def combat_loop(bot, combat, grid_df, mana_targets, user_target='demon_hunter.pn
     time.sleep(0.2)
 
     if combat <= 1:
-        spawn_units(bot, num_units=4)
+        spawn_units(bot, num_units=5)
     else:
         # Upgrade units
         bot.mana_level(mana_targets, combat, hero_power=True)
         # Spawn unit
-        spawn_units(bot, num_units=1)
+        spawn_units(bot, num_units=3)
 
     # Try to merge units
     grid_df, unit_series, merge_series, df_groups, info = bot.try_merge(prev_grid=grid_df, merge_target=user_target)
