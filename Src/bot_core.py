@@ -350,7 +350,7 @@ class Bot:
                 if (num_merge_target >= 6) and (df_groups['empty.png'] <= 1):
                     # Remove merge_target from the selected_units to avoid scrapping it too early
                     selected_units_copy.remove(merge_target)
-                    # Also remove scrapper ofcourse
+                    # Also remove scrapper of course
                     selected_units_copy.remove('scrapper.png')
                     # Try to merge with any of the detected units
                     self.scrapper_merge(df_split, merge_target, merge_series, merge_series_with_scrapper, target=selected_units_copy[0])
@@ -418,7 +418,7 @@ class Bot:
                     merge_df = self.merge_unit(df_split, low_series)
                 else:
                     # If grid seems full, merge more units
-                    info = 'Merging high level!'
+                    info = 'Merging High level!'
                     merge_series = adv_filter_keys(merge_series,
                                                     ranks=[3, 4, 5, 6, 7],
                                                     units=['zealot.png', 'crystal.png', 'bruser.png', merge_target],
@@ -929,14 +929,6 @@ def adv_filter_keys(unit_series, units=None, ranks=None, remove=False):
     else:
         series = series[series.index.isin(filtered_ranks.index)]
     return series
-
-
-# Will spam read all knowledge in knowledge base for free gold, roughly 3k, 100 gems
-def read_knowledge(bot):
-    spam_click = range(1000)
-    for i in spam_click:
-        bot.click(450, 1300, 0.1)
-
 
 def get_button_pos(df, button):
     #button=button+'.png'

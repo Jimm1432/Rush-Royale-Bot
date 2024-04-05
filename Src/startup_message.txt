@@ -2,23 +2,26 @@ Rush Royale Bot v1.20
 Updated and reworked by Jimm1432
 
 *Change Log*
+1.21
+Minor adjustments.
+Error handling added to Profile selector.
 1.20
 Shop items in GUI.
-Added rhandum roulette ad support
-Play clan tournament sandals
-Collect clan chat gifts
-Added clan request support, choose unit from GUI
+Added rhandum roulette ad support.
+Play clan tournament sandals.
+Collect clan gifts.
+Added clan unit request support, Choose units from GUI.
 1.19
 Curse detection and merge block.
 Puppeteer detection and upgrade block.
 Option added to use treasure maps.
 Improvements to merging for dryads and harlequin.
 1.18
-Added max talent units for better identifaction of units.
+Added max talent units for better identification of units.
 1.17
-Added multiple Configs and a selector at start-up.
+Added multiple Configures and selector at start-up.
 1.16
-Added Shaman to GUI
+Added Shaman to GUI.
 1.15
 Added all current units.
 Fixed AD check box.
@@ -56,7 +59,7 @@ Updated scrcpy to 1.25.
        `-.      d8P'    ,-'   
           `-.,,_'__,,.-'
           
-Special thanks to others work I have used at some time or another.
+Special thanks to others work I have used sometime or another.
 AxelBjork
 Newb420  
 Niels-db       

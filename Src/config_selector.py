@@ -2,7 +2,10 @@ import tkinter as tk
 from tkinter import messagebox
 import shutil
 import os
+import logging
 
+# Setup logging
+logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 root = tk.Tk()
 root.title("Deck")
 # Set dark background
@@ -26,20 +29,35 @@ tk.Radiobutton(root, text="Deck 5", variable=var, value="deck5").pack()
 
 # Define the copy_file function here
 def copy_file():
-    try:
-        if var.get() == "deck1":
-            shutil.copy('./configs/deck1.ini', './config.ini')
-        elif var.get() == "deck2":
-            shutil.copy('./configs/deck2.ini', './config.ini')
-        elif var.get() == "deck3":
-            shutil.copy('./configs/deck3.ini', './config.ini')
-        elif var.get() == "deck4":
-            shutil.copy('./configs/deck4.ini', './config.ini')
-        elif var.get() == "deck5":
-            shutil.copy('./configs/deck5.ini', './config.ini')
-    except FileNotFoundError:
-        messagebox.showwarning("Warning", "No such file.")
+    source_path = './configs/'
+    dest_path = './config.ini'
+    selected_deck = var.get()
+    if selected_deck:
+        source_file = source_path + selected_deck + '.ini'
+        try:
+            # Validate file paths
+            if not os.path.exists(source_file):
+                raise FileNotFoundError(f"The source file {source_file} does not exist.")
+            if not os.path.exists(os.path.dirname(dest_path)):
+                raise FileNotFoundError("The destination directory does not exist.")
 
+            # Backup existing config.ini
+            if os.path.exists(dest_path):
+                shutil.copy(dest_path, dest_path + '.bak')
+
+            # Copy the selected deck file to config.ini
+            shutil.copy(source_file, dest_path)
+            messagebox.showinfo("Success", "Configuration updated successfully.")
+            logging.info(f"Configuration updated successfully from {selected_deck}.")
+        except FileNotFoundError as e:
+            messagebox.showwarning("Warning", str(e))
+            logging.warning(str(e))
+        except Exception as e:
+            messagebox.showerror("Error", "An unexpected error occurred.")
+            logging.error(str(e))
+    else:
+        messagebox.showwarning("Warning", "Please select a deck.")
+        logging.warning("Attempted to copy file without selecting a deck.")
 # Create the "Submit" button with the copy_file command
 tk.Button(root, text="Submit", command=copy_file).pack()
 

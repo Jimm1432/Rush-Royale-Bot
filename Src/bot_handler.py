@@ -74,12 +74,11 @@ def combat_loop(bot, combat, grid_df, mana_targets, user_target='demon_hunter.pn
         bot.mana_level(mana_targets, combat, hero_power=True)
         # Spawn unit
         spawn_units(bot, num_units=3)
-
     # Try to merge units
     grid_df, unit_series, merge_series, df_groups, info = bot.try_merge(prev_grid=grid_df, merge_target=user_target)
     return grid_df, unit_series, merge_series, df_groups, info
 
-def spawn_units(bot, num_units=4):
+def spawn_units(bot, num_units=5):
     for _ in range(num_units):
         bot.click(450, 1360)
 
@@ -90,7 +89,7 @@ def bot_loop(bot, info_event):
     user_pve = config.getboolean('pve', True)
     user_ads = config.getboolean('watch_ad', True)
     user_treasure_map_green = config.getboolean('treasure_map_green', True)
-    user_treasure_map_gold = config.getboolean('treasure_map_gold', False)
+    user_treasure_map_gold = config.getboolean('treasure_map_gold', True)
     user_shaman = config.getboolean('require_shaman', False)
     user_clan_collect = config.getboolean('clan_collect', True)
     user_clan_tournament = config.getboolean('clan_tournament', True)
@@ -105,8 +104,8 @@ def bot_loop(bot, info_event):
     bot.logger.info(f'Green maps = {user_treasure_map_green}')
     bot.logger.info(f'Gold maps = {user_treasure_map_gold}')
     bot.logger.info(f'Req Shaman for PvE = {user_shaman}')
-    bot.logger.info(f'Collect clan chat = {user_clan_collect}')
-    bot.logger.info(f'Play clan tourney = {user_clan_tournament}')
+    bot.logger.info(f'Collect clan gifts = {user_clan_collect}')
+    bot.logger.info(f'Play clan tournament = {user_clan_tournament}')
     # Load optional settings
     require_shaman = user_shaman
     max_loops = int(config.get('max_loops', 800))  # this will increase time waiting when logging in from mobile
@@ -175,7 +174,7 @@ def bot_loop(bot, info_event):
             bot.logger.info(f'{output[1]}, wait count: {wait}')
             output = bot.battle_screen(start=False, pve=user_pve, clan_tournament=user_clan_tournament, floor=user_floor)
             wait += 1
-            if wait > 15:
+            if wait > 20:
                 bot.logger.warning('RESTARTING')
                 bot.restart_RR(),
                 wait = 0

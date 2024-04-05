@@ -221,7 +221,7 @@ def create_options(frame1, config):
     # Clan options
     label = Label(frame1, text="Clan options", justify=LEFT).grid(row=1, column=0, sticky=W)
     clan_collect_check = Checkbutton(frame1, text='Collect', variable=clan_collect_var, justify=LEFT).grid(row=1, column=1, sticky=W)
-    clan_tournament_check = Checkbutton(frame1, text='Tourney', variable=clan_tournament_var, justify=LEFT).grid(row=1, column=2, sticky=W)
+    clan_tournament_check = Checkbutton(frame1, text='Tournament', variable=clan_tournament_var, justify=LEFT).grid(row=1, column=2, sticky=W)
 
     # Dropdown menu's for clan requests
     # Get the list of .png files for epic units in a folder (replace 'your_folder_path' with your actual folder path)
@@ -234,7 +234,7 @@ def create_options(frame1, config):
     unit_files_epic.insert(0, placeholder_epic)
     unit_files_common_rare.insert(0, placeholder_common_rare)
 
-    # Create the epic units dropdown menu with the modified list of options
+    # Create the epic units drop down menu with the modified list of options
     unit_dropdown_epic = OptionMenu(frame1, request_epic_var, *unit_files_epic)
     unit_dropdown_epic.grid(row=1, column=4, sticky=W)
     unit_dropdown_common_rare = OptionMenu(frame1, request_common_rare_var, *unit_files_common_rare)
@@ -284,7 +284,7 @@ def create_combat_info(frame2):
 
 def create_base():
     root = Tk()
-    root.title("RR bot")
+    root.title("Rush bot")
     root.geometry("800x600")
     # Set dark background
     root.configure(background='#575559')
